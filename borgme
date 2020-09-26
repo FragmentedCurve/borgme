@@ -1,0 +1,94 @@
+#!/bin/sh
+
+set -e
+
+# Defaults
+REPO=/backup/$(hostname)
+
+test -e /etc/borgme.conf && . /etc/borgme.conf
+test -e ~/.borgme.conf && . ~/.borgme.conf
+
+# Force the following to always be exclude in a system backup
+SYSTEM_EXCLUDE=(/proc /sys /tmp /dev ${SYSTEM_EXCLUDE[*]})
+
+borg_user() {
+	user=${1}
+
+	# Get home directory to backup
+	user_home="/home/${user}"
+	user_home_var="${user}_HOME"
+	if [ -n "${!user_home_var}" ]; then
+		user_home="${!user_home_var}"
+	fi
+
+	# Setup exclude flags
+	user_exclude_var="${user}_EXCLUDE[@]"
+	exclude_flags=""
+	for ex in ${!user_exclude_var}; do
+		# Each exclude is relative to the home dir
+		exclude_flags="${exclude_flags} --exclude ${user_home}/${ex}"
+	done
+	
+	borg create \
+		 -s \
+		 --progress \
+		 --exclude-cache \
+		 ${exclude_flags} \
+		 "${REPO}::user-${user}-{now}" ${user_home}
+}
+
+borg_users() {
+	for user in ${USERS[*]}; do
+		borg_user ${user}
+	done
+}
+
+borg_system() {
+	# Setup exclude flags
+	exclude_flags=""
+	for ex in ${SYSTEM_EXCLUDE[@]}; do
+		exclude_flags="${exclude_flags} --exclude ${ex}"
+	done
+
+	borg create \
+		 -s \
+		 --progress \
+		 --exclude-cache \
+		 ${exclude_flags} \
+		 "${REPO}::system-{now}" /
+}
+
+help() {
+	echo "Usage: ${0} [noun]"
+	echo
+	echo "Nouns:"
+	echo "  user [username]"
+	echo "  users"
+	echo "  system"
+	echo "  list"
+	echo "  help"
+}
+
+while [ -n ${1} ]; do
+	arg=${1}
+	shift
+	case ${arg} in
+		"user")
+			borg_user ${1}
+			;;
+		"users")
+			borg_users
+			;;
+		"system")
+			borg_system
+			;;
+		"list")
+			# TODO list users and their settings
+			;;
+		*)
+			help
+			;;
+	esac
+done
+
+exit 0
