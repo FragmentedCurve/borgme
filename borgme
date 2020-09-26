@@ -10,7 +10,8 @@ test -e /usr/local/etc/borgme.conf && . /etc/borgme.conf
 test -e ~/.borgme.conf && . ~/.borgme.conf
 
 # Force the following to always be exclude in a system backup
-SYSTEM_EXCLUDE=(/proc /sys /tmp /dev ${SYSTEM_EXCLUDE[*]})
+SYSTEM_EXCLUDE=(/proc /sys /tmp /dev ${SYSTEM_EXCLUDE[@]})
+VERBOSE="-s --progress"
 
 borg_user() {
 	user=${1}
@@ -31,8 +32,7 @@ borg_user() {
 	done
 	
 	borg create \
-		 -s \
-		 --progress \
+		 ${VERBOSE} \
 		 --exclude-cache \
 		 ${exclude_flags} \
 		 "${REPO}::user-${user}-{now}" ${user_home}
@@ -52,8 +52,7 @@ borg_system() {
 	done
 
 	borg create \
-		 -s \
-		 --progress \
+		 ${VERBOSE} \
 		 --exclude-cache \
 		 ${exclude_flags} \
 		 "${REPO}::system-{now}" /
