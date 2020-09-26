@@ -58,37 +58,62 @@ borg_system() {
 		 "${REPO}::system-{now}" /
 }
 
-help() {
-	echo "Usage: ${0} [noun]"
-	echo
-	echo "Nouns:"
-	echo "  user [username]"
-	echo "  users"
-	echo "  system"
-	echo "  list"
-	echo "  help"
+list_users() {
+	for user in ${USERS[@]}; do
+		echo ${user}
+	done
 }
 
-while [ -n ${1} ]; do
-	arg=${1}
+help() {
+	echo "Usage: ${0} [flags] [command]"
+	echo
+	echo "Commands:"
+	echo "  user   [username]  Backup the user with given username"
+	echo "  users              Backup all users"
+	echo "  system             Backup the entire system"
+	echo "  list               List users configured to be backed up"
+	echo "  help               This"
+	echo
+	echo "Flags:"
+	echo "  -q        Quiet mode"
+	echo
+	echo "Example"
+	echo "  ${0} -q user foobar"
+}
+
+flags="${1}"
+if [ "${flags:0:1}" = "-" ]; then
+	flags=${flags#'-'}
+	while [ -n "${flags}" ]; do
+		  f=${flags:0:1}
+		  case ${f} in
+			  "q")
+				  VERBOSE=""
+				  ;;
+		  esac
+		  flags=${flags:1}
+	done
 	shift
-	case ${arg} in
-		"user")
-			borg_user ${1}
-			;;
-		"users")
-			borg_users
-			;;
-		"system")
-			borg_system
-			;;
-		"list")
-			# TODO list users and their settings
-			;;
-		*)
-			help
-			;;
-	esac
-done
+fi
+
+arg=${1}
+opt=${2}
+case ${arg} in
+	"user")
+		borg_user ${opt}
+		;;
+	"users")
+		borg_users
+		;;
+	"system")
+		borg_system
+		;;
+	"list")
+		list_users
+		;;
+	*)
+		help
+		;;
+esac
 
 exit 0
