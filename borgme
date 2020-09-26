@@ -6,6 +6,7 @@ set -e
 REPO=/backup/$(hostname)
 
 test -e /etc/borgme.conf && . /etc/borgme.conf
+test -e /usr/local/etc/borgme.conf && . /etc/borgme.conf
 test -e ~/.borgme.conf && . ~/.borgme.conf
 
 # Force the following to always be exclude in a system backup
